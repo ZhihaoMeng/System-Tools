@@ -1,0 +1,19 @@
+Chong Meng (chongm) and Junqi Yu (junqiy)
+
+This project contains one single c file, which parses disk images, and
+prints out information about the files that the image contains, including
+recoverable files that someone has tried to delete.
+
+KNOWN PROBLEMS:
+
+There is no obvious known problem with this project.
+
+DESIGN:
+
+notjustcats.c navigates the provided FAT12 filesystem through a call to
+decodeFAT12, which decode FAT12 and store in arr. recFiles checks
+for either file or directory status and reads the data as is appropriate.
+recFiles and writeFile makes use of decodeFAT12 to decode the byte entries
+and find the appropriate logical clusters for the object. Finally, a call to
+writeFile is made to actually create the file with the appropriate data and
+file name.
