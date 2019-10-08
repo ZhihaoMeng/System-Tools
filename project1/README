@@ -1,0 +1,44 @@
+Name : Chong Meng
+CPSC3220 Intro to Operating System
+Project1 : leakcount sctracer
+
+--------------
+KNOWN PROBLEMS
+--------------
+
+leakcount:
+1. We assume the child process will not touch the memory of the linkedlist
+and will not terminate the leakcount abnormally.
+
+sctracer:
+1. I assume there are 1024 commandline arguments at most, but it could be
+more than 1024. We need resize the array in that case.
+2. Again the child process may terminate the parent process, which we will
+lost record of previous system call and nothing sent to file I/O.
+3. The output_file need to be protected, otherwise our child process
+may modify it.
+
+------
+DESIGN
+------
+
+leakcount:
+1. The linkedlist is used to store the pointer and size of allocated memory.
+Shen a free(ptr) is called, I traverse the linkedlist and delete the 
+relevent node.
+2. When the destructor is called, the memory leak information will be sent
+to stderr. Then the whole linkedlist will be freed.
+
+sctracer:
+1. A pretty large array is used to count the system call. 
+2. Nothing special but the ptrace will send signal at the entry
+and exit of system call. we just count one of them. 
+
+
+---------
+REFERENCE
+---------
+1. man page of:memcpy,memset,strtok,ptracee,execvpe
+2. constructor and destructor attributes that are provided by GCC
+3. file I/O in c
+4. online tutorials and vedio of strtok
