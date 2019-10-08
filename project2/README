@@ -1,0 +1,99 @@
+Name : Chong Meng
+CPSC3220 Intro to Operating System
+Project2 : user level thread library
+
+--------------
+KNOWN PROBLEMS
+--------------
+
+memory usage:
+1. There is a global Lock array and I malloc memory for each lock,
+this should be freed before the exit of main thread. But apparently 
+I have no idea about when then main thread will exit.
+
+maximum number of thread:
+1. I define 'NUM_THREADS = 1024' which is the maximum number of threads 
+activated simultaneously. Maybe that's not big enough? (I don't know).
+2. I use a linkedlist to store the information of threads, so my library
+could support arbitrary amount of threads.
+
+condition variables' waitting order:
+1. I implement condition variables' waitting order using a queue (FCFS). 
+If many threads are waitting for same lock and same condition variable, 
+is the threadSignal() identical to all these thread? If the answer is no we 
+need get dependency between wait and signal.
+
+performance:
+1. not fast enough, there are some unnecessary reordering of the threads.
+
+------
+DESIGN
+------
+
+data structure:
+1. doubly linked-linkedlist of threads
+    a. the 'Thread' struct is a node of doubly-linked linkedlist, it
+        contain:
+        'threadId', threadId for this thread
+        'lockId' which is current lock hold by this thread, it is 
+            redundant but keep it make the struct natrual.
+        'status' which is status of this thread, could be 0: running,
+            1:runnable, 2: waitting, 3: finished
+        'context' which is context pointer to this thread's context
+        'result' which store the result of this thread
+        'prev' and 'next' are linkes to other threads
+    b. all currently activated thread are connected as a doubly-linked 
+        linkedlist
+ 
+2. lock register (array)
+    a. the 'Lock' struct store all the information about a specific lock,
+        it contain:
+        'locked' which is current status of this lock, could be 
+            0: available, 1: used
+        'owner' which is the owner of this lock 
+        'queue' is waitting queue for the lock.
+        'conds[CONDITIONS_PER_LOCK]' is an array, each element is a 
+            waitting queue for that condition variable.
+        'tail' and 'condtails[CONDITIONS_PER_LOCK]' are used for faster 
+            dequeue operation
+    b. the lock_status[NUM_LOCKS] store all the information of all lockes.
+
+3. thread dictionary
+    simple *Thread array is just used for faster look up for a thread by 
+        its threadId.
+
+4. join list 
+    every time threadJoin(thread) is called, we need store the information 
+        that current_thread is 
+    waitting for thread, so when thread is finished (in ThreadExit()), 
+        we can change current_thread's status to 1 which is 'runnable'.
+
+5. id_status[NUM_THREADS]
+    to recycle the integer for threads, I use this array to mark whether
+        a specific integer is used.
+
+
+scheduling:
+1. I put every thread in one linkedlist and use a variable to indentify 
+    its status, other implement may use separated linkedlist such as 
+    readylist, waitlist, finishedlist. This structure is simpler to implement
+    my scheduling stragety.
+2. scheduling:
+    a. if a thread is changed form running status to other status, I will move
+        it to the tail of the queue since it already got some cpu time.
+    b. if a thread's status is 'waitting', I will also regard them as waitting
+        for the cpu time just like thread that is runnable. Every time I need a
+        runnable thread, I will find the first runnable thread in the linkedlist.
+        So a 'waitting' thread just spend smallest time on waiting.(if its status
+        is changed to 'runnable' before previous runnable thread is finished or 
+        yield, it will just spend time on waiting the cpu)
+
+---------
+REFERENCE
+---------
+
+1. I use 'assert' to verify my logic about context transition, I remove 
+    these assertion after my library work properly.
+2. man page of ucontext, getcontext, makecontext, swapcontext
+3. OSPP : how thread function works.
+4. OSPP : how condition variable works and why we need a wait queue for it.
