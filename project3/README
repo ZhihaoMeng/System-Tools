@@ -1,0 +1,54 @@
+Name : Chong Meng
+CPSC3220 Intro to Operating System
+Project3 : memory allocator
+
+This is a great material for learning C pointers and memory allocation.
+
+--------------
+KNOWN PROBLEMS
+--------------
+1. For safer memory management, we should munmap all mapped pages in destructor
+
+2. For size 1024, only 3 blocks can be allocated on one page, waste 992 bytes.
+
+------
+DESIGN
+------
+1. Structure of page:
+    1. Store the size of the block on the head of the page, 8 bytes
+    2. Follow by blocks, each block contain:
+        1. address of previous block. 0x00 if it's the first block for this size, 8 bytes.
+        2. follow by the data region allocated for user, may be one of 8,16,...,1024 bytes.
+    3. Create block untill the very end of the page (may waste more space for larger block)
+
+e.g.
+|head of the page: 8 bytes |           header of block:8bytes           |
+           
+|size of block in this page|address of prev block(null or in other page)|---------data block---------|
+|address of prev block|---------data block---------||address of prev block|---------data block---------|
+|address of prev block|---------data block---------|........more blocks......|
+|****wasted space if possible****|(end of the page)
+
+2. Keep track of the free blocks:
+    The global uintptr_t array segregated_free_list[NUM_BUCKETS] are the pointers to the first free block of each bucket,
+    so it use NUM_BUCKETS * 8 = 64 bytes global memory. We can get access of rest free blocks via the address of 
+    the pointer point to and so on.
+    1. when malloc is called:
+        modify the segregated_free_list[bucket] to the previous block;
+    2. when free is called:
+        1. make the pointer points to current segregated_free_list[bucket] 
+        2. modify segregated_free_list[bucket] to the pointer
+
+3. Stragety for allocate memory
+    I have 8 buckets for maximum size of : 8, 16, 32, 64, 128, 256, 512, 1024 bytes.
+    Try to be generous when allocate memory:
+    1. for malloc : word align for faster access and more space
+    2. for realloc, do nothing for smaller space application
+
+---------
+REFERENCE
+---------
+1. man page of:memcpy,memset,realloc,mmap.
+2. constructor and destructor attributes that are provided by GCC.
+3. online resources help me understand the pointer.
+
